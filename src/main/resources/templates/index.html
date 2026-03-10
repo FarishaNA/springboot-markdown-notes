@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Notes</title>
+    <!-- Modern Styling -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <!-- Marked.js for rendering markdown as HTML on the index page -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        // Set theme before page loads to prevent flash
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+</head>
+<body>
+
+    <header>
+        <h1>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            Markdown Notes
+        </h1>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <button id="theme-toggle" class="btn btn-outline" style="padding: 0.4rem;" aria-label="Toggle Theme">
+                <svg id="theme-icon-dark" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                <svg id="theme-icon-light" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            </button>
+            <a href="/new" class="btn btn-primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                New Note
+            </a>
+        </div>
+    </header>
+
+    <main>
+        <section>
+            
+            <div th:if="${#lists.isEmpty(notes)}" class="empty-state">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--border-color)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem;">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                <p>Your workspace is empty.</p>
+                <a href="/new" class="btn btn-primary">Create Your First Note</a>
+            </div>
+
+            <ul th:if="${!#lists.isEmpty(notes)}" class="notes-grid">
+                <li th:each="n : ${notes}">
+                    <a th:href="@{/edit/{id}(id=${n.id})}" class="note-card-link">
+                        <div class="note-card-header">
+                            <strong th:text="${n.title}">Note title</strong>
+                            <span class="note-meta"
+                                  th:text="${#temporals.format(n.updatedAt, 'dd MMM yyyy • HH:mm')}">
+                                Just now
+                            </span>
+                        </div>
+                        <!-- We output raw markdown to a hidden element or data attribute, then render it -->
+                        <div class="note-preview markdown-preview-target" th:text="${n.content}" style="display:none;"></div>
+                        <div class="note-preview-rendered preview-panel" style="background:transparent; padding:0; border:none; box-shadow:none; overflow:hidden; max-height:8rem; margin:0;" th:id="'preview-' + ${n.id}">
+                            <!-- Javascript populates this -->
+                        </div>
+                    </a>
+                </li>
+            </ul>
+        </section>
+    </main>
+
+    <!-- Script for Theme Toggle -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const iconDark = document.getElementById('theme-icon-dark');
+            const iconLight = document.getElementById('theme-icon-light');
+
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            if (currentTheme === 'dark') {
+                iconLight.style.display = 'block';
+            } else {
+                iconDark.style.display = 'block';
+            }
+
+            themeToggleBtn.addEventListener('click', () => {
+                const current = document.documentElement.getAttribute('data-theme');
+                if (current === 'dark') {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                    localStorage.setItem('theme', 'light');
+                    iconLight.style.display = 'none';
+                    iconDark.style.display = 'block';
+                } else {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    localStorage.setItem('theme', 'dark');
+                    iconDark.style.display = 'none';
+                    iconLight.style.display = 'block';
+                }
+            });
+        });
+    </script>
+
+    <!-- Script to render markdown previews on the index page -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Find all elements that contain raw markdown text
+            const previewTargets = document.querySelectorAll('.markdown-preview-target');
+            
+            previewTargets.forEach(target => {
+                // Get the raw text
+                const rawMarkdown = target.textContent;
+                // Find the adjacent div meant for rendered HTML
+                const renderDiv = target.nextElementSibling;
+                // Parse and inject
+                if(renderDiv) {
+                    renderDiv.innerHTML = marked.parse(rawMarkdown);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

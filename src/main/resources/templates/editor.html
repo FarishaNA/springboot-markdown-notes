@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Notes Manager</title>
+    <!-- Modern Styling -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <!-- Marked.js library for Markdown compilation -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        // Set theme before page loads to prevent flash
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            <a href="/" style="color: inherit; text-decoration: none;">Notes</a>
+        </h2>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <button id="theme-toggle" class="btn btn-outline" style="padding: 0.4rem;" aria-label="Toggle Theme">
+                <svg id="theme-icon-dark" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                <svg id="theme-icon-light" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            </button>
+            <a href="/new" class="btn btn-primary" style="padding: 0.4rem 1rem;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                New Note
+            </a>
+        </div>
+    </nav>
+
+    <div class="main-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h3>Directory</h3>
+            <ul class="note-list">
+                <li th:each="n : ${notes}">
+                    <a th:href="@{/edit/{id}(id=${n.id})}" th:text="${n.title}" th:style="${note.id == n.id ? 'background: rgba(255,255,255,0.1); color: #fff; font-weight: 500;' : ''}">Note Title</a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="workspace">
+            <form th:action="@{/save}" th:object="${note}" method="post" class="editor-form">
+                <input type="hidden" th:field="*{id}">
+                
+                <div class="toolbar">
+                    <input type="text" th:field="*{title}" placeholder="Untitled Note" required class="title-input">
+                    <div class="toolbar-actions">
+                        <a th:if="${note.id != null}" th:href="@{/delete/{id}(id=${note.id})}" class="btn btn-danger" title="Delete Note">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                <polyline points="7 3 7 8 15 8"></polyline>
+                            </svg>
+                            Save Note
+                        </button>
+                    </div>
+                </div>
+
+                <div class="split-view">
+                    <!-- Markdown Input -->
+                    <div class="editor-panel">
+                        <textarea th:field="*{content}" id="markdown-input" placeholder="# Start writing...&#10;&#10;Use Markdown syntax to format your notes."></textarea>
+                    </div>
+                    
+                    <!-- Live Preview -->
+                    <div id="markdown-preview" class="preview-panel"></div>
+                </div>
+            </form>
+        </main>
+    </div>
+
+    <!-- Script for Theme Toggle -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const iconDark = document.getElementById('theme-icon-dark');
+            const iconLight = document.getElementById('theme-icon-light');
+
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            if (currentTheme === 'dark') {
+                iconLight.style.display = 'block';
+            } else {
+                iconDark.style.display = 'block';
+            }
+
+            themeToggleBtn.addEventListener('click', () => {
+                const current = document.documentElement.getAttribute('data-theme');
+                if (current === 'dark') {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                    localStorage.setItem('theme', 'light');
+                    iconLight.style.display = 'none';
+                    iconDark.style.display = 'block';
+                } else {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    localStorage.setItem('theme', 'dark');
+                    iconDark.style.display = 'none';
+                    iconLight.style.display = 'block';
+                }
+            });
+        });
+    </script>
+
+    <!-- Live Preview Script -->
+    <script>
+        const inputElement = document.getElementById('markdown-input');
+        const previewElement = document.getElementById('markdown-preview');
+
+        // Function to update preview
+        function updatePreview() {
+            const markdownText = inputElement.value;
+            // parse Markdown to HTML using Marked.js
+            previewElement.innerHTML = marked.parse(markdownText);
+        }
+
+        // Add event listener to trigger render on every keystroke
+        inputElement.addEventListener('input', updatePreview);
+
+        // Run once on load to preview any existing content
+        updatePreview();
+    </script>
+</body>
+</html>
