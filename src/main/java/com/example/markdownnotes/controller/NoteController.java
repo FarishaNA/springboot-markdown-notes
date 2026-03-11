@@ -17,15 +17,25 @@ public class NoteController {
     }
 
     @GetMapping
-    public String listNotes(Model model) {
-        model.addAttribute("notes", noteService.getAllNotes());
+    public String listNotes(@RequestParam(required = false) String keyword, Model model) {
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            model.addAttribute("notes", noteService.searchNotes(keyword));
+        } else {
+            model.addAttribute("notes", noteService.getAllNotes());
+        }
+        model.addAttribute("keyword", keyword);
         return "index";
     }
 
     @GetMapping("/new")
-    public String newNoteForm(Model model) {
+    public String newNoteForm(@RequestParam(required = false) String keyword, Model model) {
         model.addAttribute("note", new Note());
-        model.addAttribute("notes", noteService.getAllNotes());
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            model.addAttribute("notes", noteService.searchNotes(keyword));
+        } else {
+            model.addAttribute("notes", noteService.getAllNotes());
+        }
+        model.addAttribute("keyword", keyword);
         return "editor";
     }
 
@@ -36,9 +46,14 @@ public class NoteController {
     }
 
     @GetMapping("/edit/{id}")
-    public String editNoteForm(@PathVariable Long id, Model model) {
+    public String editNoteForm(@PathVariable Long id, @RequestParam(required = false) String keyword, Model model) {
         model.addAttribute("note", noteService.getNoteById(id));
-        model.addAttribute("notes", noteService.getAllNotes());
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            model.addAttribute("notes", noteService.searchNotes(keyword));
+        } else {
+            model.addAttribute("notes", noteService.getAllNotes());
+        }
+        model.addAttribute("keyword", keyword);
         return "editor";
     }
 

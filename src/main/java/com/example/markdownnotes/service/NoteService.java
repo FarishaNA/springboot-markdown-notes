@@ -19,6 +19,10 @@ public class NoteService {
         return noteRepository.findAll();
     }
 
+    public List<Note> searchNotes(String keyword) {
+        return noteRepository.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(keyword, keyword);
+    }
+
     public Note getNoteById(Long id) {
         return noteRepository.findById(id).orElse(new Note());
     }
