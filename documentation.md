@@ -119,6 +119,3 @@ If you are a developer looking to spin up this project on your local machine:
 4. **Access Web Portal**: Open your preferred modern browser and navigate to:
    [http://localhost:8080](http://localhost:8080)
 5. **Database Access**: You can inspect the pure H2 database at `http://localhost:8080/h2-console` (Ensure config matches settings in `application.properties`).
-
----
-*Created by Antigravity*
